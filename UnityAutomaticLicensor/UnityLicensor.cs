@@ -120,6 +120,7 @@ namespace UnityAutomaticLicensor
         }
 
         private Regex _machineKeyCapture = new Regex("Posting (.*)$", RegexOptions.Multiline);
+        private Regex _nextLicenseCheck = new Regex("Next license update check is after", RegexOptions.Multiline);
 
         private async Task<UnityLicenseStatusCheck> RunUnityAndCaptureMachineKeys()
         {
@@ -144,6 +145,10 @@ namespace UnityAutomaticLicensor
                         if (_machineKeyCapture.IsMatch(buffer))
                         {
                             return Task.FromResult((UnityExecutorResponseResult?)UnityExecutorResponseResult.Retry);
+                        }
+                        if (_nextLicenseCheck.IsMatch(buffer))
+                        {
+                            return Task.FromResult((UnityExecutorResponseResult?)UnityExecutorResponseResult.Success);
                         }
 
                         return Task.FromResult((UnityExecutorResponseResult?)null);
