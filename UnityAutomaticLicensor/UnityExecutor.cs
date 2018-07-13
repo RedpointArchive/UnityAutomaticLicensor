@@ -10,6 +10,9 @@ namespace UnityAutomaticLicensor
     {
         public async Task<UnityExecutorResponse> ExecuteAsync(UnityExecutorRequest request)
         {
+            var temporaryDirectory = Path.Combine(Path.GetTempPath(), "UnityExec-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            Directory.CreateDirectory(temporaryDirectory);
+            
             var logPath = Path.Combine(Path.GetTempPath(), "UnityLog-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".log");
 
             Console.WriteLine("Executing Unity...");
@@ -18,6 +21,7 @@ namespace UnityAutomaticLicensor
                 FileName = request.UnityExecutablePath,
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                WorkingDirectory = temporaryDirectory,
             };
             foreach (var arg in request.ArgumentList)
             {
@@ -25,6 +29,8 @@ namespace UnityAutomaticLicensor
             }
             processStartInfo.ArgumentList.Add("-logFile");
             processStartInfo.ArgumentList.Add(logPath);
+            processStartInfo.ArgumentList.Add("-projectPath");
+            processStartInfo.ArgumentList.Add(temporaryDirectory);
             var process = Process.Start(processStartInfo);
 
             Console.WriteLine("Unity process has been launched...");
