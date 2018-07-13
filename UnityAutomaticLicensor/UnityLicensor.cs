@@ -28,6 +28,7 @@ namespace UnityAutomaticLicensor
             var licenseKeyCheck = await RunUnityAndCaptureMachineKeys();
             if (licenseKeyCheck.IsActivated)
             {
+                Console.WriteLine("Unity has already been licensed, no need to obtain new license!");
                 return;
             }
 
@@ -127,6 +128,7 @@ namespace UnityAutomaticLicensor
             {
                 var response = await executor.ExecuteAsync(new UnityExecutorRequest
                 {
+                    UnityExecutablePath = _request.UnityExecutablePath,
                     ArgumentList =
                     {
                         "-quit",

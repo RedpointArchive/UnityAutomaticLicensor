@@ -10,13 +10,12 @@ namespace UnityAutomaticLicensor
     {
         public async Task<UnityExecutorResponse> ExecuteAsync(UnityExecutorRequest request)
         {
-            var unityPath = @"C:\Program Files\Unity\Editor\Unity.exe";
             var logPath = Path.Combine(Path.GetTempPath(), "UnityLog-" + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".log");
 
             Console.WriteLine("Executing Unity...");
             var processStartInfo = new ProcessStartInfo
             {
-                FileName = unityPath,
+                FileName = request.UnityExecutablePath,
                 UseShellExecute = false,
                 CreateNoWindow = true,
             };
