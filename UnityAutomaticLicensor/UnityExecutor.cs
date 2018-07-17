@@ -29,7 +29,7 @@ namespace UnityAutomaticLicensor
             }
             processStartInfo.ArgumentList.Add("-logFile");
             processStartInfo.ArgumentList.Add(logPath);
-            processStartInfo.ArgumentList.Add("-projectPath");
+            processStartInfo.ArgumentList.Add("-createProject");
             processStartInfo.ArgumentList.Add(temporaryDirectory);
             var process = Process.Start(processStartInfo);
 

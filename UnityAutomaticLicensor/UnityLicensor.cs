@@ -109,6 +109,16 @@ namespace UnityAutomaticLicensor
                 await writer.WriteAsync(licenseContent);
             }
             Console.WriteLine("Successfully obtained a Unity license!");
+
+            Console.WriteLine("Finalising license by running Unity...");
+            var finaliseResponse = await RunUnityToFinaliseLicense();
+            if (finaliseResponse.IsActivated)
+            {
+                Console.WriteLine("Successfully finalised Unity license!");
+                return;
+            }
+            
+            throw new InvalidOperationException("Unable to finalise Unity license!");
         }
 
         private string GenerateTxId()
@@ -133,6 +143,12 @@ namespace UnityAutomaticLicensor
                     ArgumentList =
                     {
                         "-quit",
+                        "-batchmode",
+                        "-username",
+                        _request.Username,
+                        "-password",
+                        _request.Password,
+                        "-force-free"
                     },
                     CustomBufferHandler = (buffer) =>
                     {
@@ -159,6 +175,42 @@ namespace UnityAutomaticLicensor
                     };
                 }
                 else if (response.Result == UnityExecutorResponseResult.Success)
+                {
+                    return new UnityLicenseStatusCheck
+                    {
+                        IsActivated = true,
+                    };
+                }
+                else if (response.Result == UnityExecutorResponseResult.Error)
+                {
+                    throw new InvalidOperationException(response.Output);
+                }
+            }
+
+            throw new InvalidOperationException("Unity didn't provide us with machine keys after 30 licensing attempts...");
+        }
+        
+        private async Task<UnityLicenseStatusCheck> RunUnityToFinaliseLicense()
+        {
+            var executor = new UnityExecutor();
+            for (var i = 0; i < 30; i++)
+            {
+                var response = await executor.ExecuteAsync(new UnityExecutorRequest
+                {
+                    UnityExecutablePath = _request.UnityExecutablePath,
+                    ArgumentList =
+                    {
+                        "-quit",
+                        "-batchmode",
+                        "-username",
+                        _request.Username,
+                        "-password",
+                        _request.Password,
+                        "-force-free"
+                    }
+                });
+                
+                if (response.Result == UnityExecutorResponseResult.Success)
                 {
                     return new UnityLicenseStatusCheck
                     {
