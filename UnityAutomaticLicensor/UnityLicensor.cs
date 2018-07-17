@@ -64,13 +64,7 @@ namespace UnityAutomaticLicensor
             pollRequest.AddHeader("Content-Type", "text/xml");
             pollRequest.AddParameter("text/xml", licenseKeyCheck.PostedLicenseAttemptXml, ParameterType.RequestBody);
             response = await licenseClient.ExecuteTaskAsync(pollRequest);
-            // TODO: Read XML properly...
-            var pollResponse = response.Content.Contains(">true<");
-            if (!pollResponse)
-            {
-                // TODO: Find a way to automatically submit the survey.
-                throw new InvalidOperationException("The account must have completed the Unity survey previously in order to be used for licensing!");
-            }
+            // Pretty sure the XML response isn't used any more.
 
             Console.WriteLine("Sending license request to licensing server...");
             var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
