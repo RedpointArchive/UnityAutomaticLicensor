@@ -66,6 +66,9 @@ namespace UnityAutomaticLicensor
             response = await licenseClient.ExecuteTaskAsync(pollRequest);
             // Pretty sure the XML response isn't used any more.
 
+            Console.WriteLine("Poll request response:");
+            Console.WriteLine(response.Content);
+
             Console.WriteLine("Sending license request to licensing server...");
             var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
             licenseRequest.AddUrlSegment("txId", txId);
@@ -100,6 +103,9 @@ namespace UnityAutomaticLicensor
             activationRequest.AddParameter("text/xml", licenseKeyCheck.PostedLicenseAttemptXml, ParameterType.RequestBody);
             response = await activationClient.ExecuteTaskAsync(activationRequest);
             var licenseContent = response.Content;
+            
+            Console.WriteLine("Activation response:");
+            Console.WriteLine(licenseContent);
 
             using (var writer = new StreamWriter(new FileStream(licensePath, FileMode.Create, FileAccess.Write)))
             {
