@@ -182,7 +182,7 @@ namespace UnityAutomaticLicensor
                     Console.WriteLine(JsonConvert.SerializeObject(surveyBody, Formatting.Indented));
 
                     Console.WriteLine("Sending follow-up license request with survey results to licensing server...");
-                    licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
+                    var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
                     licenseRequest.AddUrlSegment("txId", txId);
                     licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
                     licenseRequest.AddJsonBody(surveyBody);
@@ -196,7 +196,7 @@ namespace UnityAutomaticLicensor
             else if (!licenseResponse.Transaction.Survey.Required && !licenseResponse.Transaction.Survey.Answered)
             {
                 Console.WriteLine("Sending follow-up license request with skipped survey to licensing server...");
-                licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
+                var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
                 licenseRequest.AddUrlSegment("txId", txId);
                 licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
                 licenseRequest.AddJsonBody(new
