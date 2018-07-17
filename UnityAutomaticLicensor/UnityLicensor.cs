@@ -87,6 +87,9 @@ namespace UnityAutomaticLicensor
             response = await licenseClient.ExecuteTaskAsync(licenseRequest);
             var licenseResponse = JsonConvert.DeserializeObject<UnityLicenseTransactionResponse>(response.Content);
 
+            Console.WriteLine("Licensing response:");
+            Console.WriteLine(response.Content);
+
             Console.WriteLine("Sending download request to activation server...");
             var activationClient = new RestClient("https://activation.unity3d.com");
             var activationRequest = new RestRequest("license.fcgi", Method.POST);
