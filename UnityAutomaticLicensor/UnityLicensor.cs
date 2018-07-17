@@ -49,6 +49,9 @@ namespace UnityAutomaticLicensor
             var response = await coreClient.ExecuteTaskAsync(loginRequest);
             var loginResponse = JsonConvert.DeserializeObject<UnityCloudLoginResponse>(response.Content);
 
+            Console.WriteLine("Login response:");
+            Console.WriteLine(response.Content);
+
             Console.WriteLine("Discovering user info for licensing...");
             var meRequest = new RestRequest("api/users/me", Method.GET);
             meRequest.AddCookie("unity_version", "5.4.1f1");
@@ -56,6 +59,9 @@ namespace UnityAutomaticLicensor
             meRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
             response = await coreClient.ExecuteTaskAsync(meRequest);
             var userResponse = JsonConvert.DeserializeObject<UnityCloudUserResponse>(response.Content);
+
+            Console.WriteLine("User response:");
+            Console.WriteLine(response.Content);
 
             Console.WriteLine("Sending poll request to licensing server with machine keys...");
             var txId = GenerateTxId();
@@ -72,25 +78,39 @@ namespace UnityAutomaticLicensor
             Console.WriteLine("Poll request response:");
             Console.WriteLine(response.Content);
 
-            Console.WriteLine("Sending initial license request to licensing server...");
-            var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
-            licenseRequest.AddUrlSegment("txId", txId);
-            licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
-            licenseRequest.AddJsonBody(new
+            UnityLicenseTransactionResponse licenseResponse = null;
+            for (var i = 0; i < 30; i++)
             {
-                transaction = new
+                Console.WriteLine("Sending initial license request to licensing server...");
+                var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
+                licenseRequest.AddUrlSegment("txId", txId);
+                licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
+                licenseRequest.AddJsonBody(new
                 {
-                    serial = new
+                    transaction = new
                     {
-                        type = "personal"
+                        serial = new
+                        {
+                            type = "personal"
+                        }
                     }
-                }
-            });
-            response = await licenseClient.ExecuteTaskAsync(licenseRequest);
-            var licenseResponse = JsonConvert.DeserializeObject<UnityLicenseTransactionResponse>(response.Content);
+                });
+                response = await licenseClient.ExecuteTaskAsync(licenseRequest);
+                licenseResponse = JsonConvert.DeserializeObject<UnityLicenseTransactionResponse>(response.Content);
 
-            Console.WriteLine("Licensing response:");
-            Console.WriteLine(response.Content);
+                Console.WriteLine("Licensing response:");
+                Console.WriteLine(response.Content);
+
+                if (licenseResponse?.Transaction == null)
+                {
+                    Console.WriteLine("Licensing didn't include transaction in response, retrying soon...");
+                    await Task.Delay(i * 1000);
+                }
+                else
+                {
+                    break;
+                }
+            }
 
             if (licenseResponse.Transaction.Survey.Required && !licenseResponse.Transaction.Survey.Answered)
             {
