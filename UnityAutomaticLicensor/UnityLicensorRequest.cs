@@ -6,6 +6,8 @@
 
         public string Password { get; set; }
 
-        public string UnityExecutablePath { get; internal set; }
+        public string UnityExecutablePath { get; set; }
+
+        public string UnityVersion { get; set; }
     }
 }

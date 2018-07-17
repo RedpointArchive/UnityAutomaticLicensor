@@ -23,7 +23,7 @@ namespace UnityAutomaticLicensor
 
         public async Task Run()
         {
-            var licensePath = @"C:\ProgramData\Unity\Unity_v5.x.ulf";
+            var licensePath = $@"C:\ProgramData\Unity\Unity_{_request.UnityVersion}.ulf";
 
             var licenseKeyCheck = await RunUnityAndCaptureMachineKeys();
             if (licenseKeyCheck.IsActivated)
@@ -133,12 +133,6 @@ namespace UnityAutomaticLicensor
                     ArgumentList =
                     {
                         "-quit",
-                        "-batchmode",
-                        "-username",
-                        _request.Username,
-                        "-password",
-                        _request.Password,
-                        "-force-free"
                     },
                     CustomBufferHandler = (buffer) =>
                     {

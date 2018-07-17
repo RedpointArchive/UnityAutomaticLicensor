@@ -22,6 +22,9 @@ namespace UnityAutomaticLicensor
         [Option("--unity-path <path-to-Unity.exe>", Description = "Path to Unity executable")]
         public string UnityPath { get; set; }
 
+        [Option("--unity-version <version>", Description = "'v5.x' for 5.x series, 'lic' for 2017.0 and later")]
+        public string UnityVersion { get; set; } = "v5.x";
+
         private async Task OnExecute()
         {
             var licensor = new UnityLicensor(new UnityLicensorRequest
@@ -29,6 +32,7 @@ namespace UnityAutomaticLicensor
                 Username = this.Username,
                 Password = this.Password,
                 UnityExecutablePath = this.UnityPath,
+                UnityVersion = this.UnityVersion,
             });
             await licensor.Run();
         }
