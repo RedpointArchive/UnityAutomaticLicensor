@@ -1,10 +1,13 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -69,7 +72,7 @@ namespace UnityAutomaticLicensor
             Console.WriteLine("Poll request response:");
             Console.WriteLine(response.Content);
 
-            Console.WriteLine("Sending license request to licensing server...");
+            Console.WriteLine("Sending initial license request to licensing server...");
             var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
             licenseRequest.AddUrlSegment("txId", txId);
             licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
@@ -80,10 +83,6 @@ namespace UnityAutomaticLicensor
                     serial = new
                     {
                         type = "personal"
-                    },
-                    survey_answer = new
-                    {
-                        skipped = true
                     }
                 }
             });
@@ -92,6 +91,114 @@ namespace UnityAutomaticLicensor
 
             Console.WriteLine("Licensing response:");
             Console.WriteLine(response.Content);
+
+            if (licenseResponse.Transaction.Survey.Required && !licenseResponse.Transaction.Survey.Answered)
+            {
+                // Fake a survey response so we can move forward in the licensing.
+                using (var client = new HttpClient())
+                {
+                    Console.WriteLine("Unity requires a survey to be filled in, just randomly selecting options and adding junk data...");
+
+                    var surveyRequest = JsonConvert.DeserializeObject<UnitySurvey>(await client.GetStringAsync(licenseResponse.Transaction.Survey.Url));
+                    var surveyAnswers = new Dictionary<int, object>();
+
+                    foreach (var option in surveyRequest.Questions)
+                    {
+                        switch (option.Widget)
+                        {
+                            case "country":
+                                surveyAnswers[option.Id] = new
+                                {
+                                    cn_province = "",
+                                    country = "AU",
+                                    province = "",
+                                    state = "",
+                                };
+                                break;
+                            case "radio":
+                                {
+                                    var o = new JObject();
+                                    o["0"] = option.Options.First().Id.ToString();
+                                    surveyAnswers[option.Id] = o;
+                                    break;
+                                }
+                            case "checkbox":
+                                {
+                                    var o = new JObject();
+                                    o["0"] = option.Options.First().Id.ToString();
+                                    surveyAnswers[option.Id] = o;
+                                    break;
+                                }
+                            case "select":
+                                {
+                                    var o = new JObject();
+                                    o["0"] = option.Options.First().Id.ToString();
+                                    surveyAnswers[option.Id] = o;
+                                    break;
+                                }
+                            case "string":
+                                surveyAnswers[option.Id] = "N/A";
+                                break;
+                        }
+                    }
+
+                    var surveyBody = new
+                    {
+                        transaction = new
+                        {
+                            serial = new
+                            {
+                                type = "personal"
+                            },
+                            survey_answer = new
+                            {
+                                skipped = false,
+                                answers = surveyAnswers,
+                            }
+                        }
+                    };
+
+                    Console.WriteLine("Submitting request with survey answers:");
+                    Console.WriteLine(JsonConvert.SerializeObject(surveyBody, Formatting.Indented));
+
+                    Console.WriteLine("Sending follow-up license request with survey results to licensing server...");
+                    licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
+                    licenseRequest.AddUrlSegment("txId", txId);
+                    licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
+                    licenseRequest.AddJsonBody(surveyBody);
+                    response = await licenseClient.ExecuteTaskAsync(licenseRequest);
+                    licenseResponse = JsonConvert.DeserializeObject<UnityLicenseTransactionResponse>(response.Content);
+
+                    Console.WriteLine("Licensing response with survey:");
+                    Console.WriteLine(response.Content);
+                }
+            }
+            else if (!licenseResponse.Transaction.Survey.Required && !licenseResponse.Transaction.Survey.Answered)
+            {
+                Console.WriteLine("Sending follow-up license request with skipped survey to licensing server...");
+                licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
+                licenseRequest.AddUrlSegment("txId", txId);
+                licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
+                licenseRequest.AddJsonBody(new
+                {
+                    transaction = new
+                    {
+                        serial = new
+                        {
+                            type = "personal"
+                        },
+                        survey_answer = new
+                        {
+                            skipped = true,
+                        }
+                    }
+                });
+                response = await licenseClient.ExecuteTaskAsync(licenseRequest);
+                licenseResponse = JsonConvert.DeserializeObject<UnityLicenseTransactionResponse>(response.Content);
+
+                Console.WriteLine("Licensing response with skipped survey:");
+                Console.WriteLine(response.Content);
+            }
 
             Console.WriteLine("Sending download request to activation server...");
             var activationClient = new RestClient("https://activation.unity3d.com");
