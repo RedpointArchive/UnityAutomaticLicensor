@@ -260,7 +260,8 @@ namespace UnityAutomaticLicensor
 
         private Regex _machineKeyCapture = new Regex("Posting (.*)$", RegexOptions.Multiline);
         private Regex _nextLicenseCheck = new Regex("Next license update check is after", RegexOptions.Multiline);
-
+        private Regex _noPermissionsCheck = new Regex("No sufficient permissions while processing request", RegexOptions.Multiline);
+        
         private async Task<UnityLicenseStatusCheck> RunUnityAndCaptureMachineKeys()
         {
             var executor = new UnityExecutor();
@@ -281,6 +282,10 @@ namespace UnityAutomaticLicensor
                     },
                     CustomBufferHandler = (buffer) =>
                     {
+                        if (_noPermissionsCheck.IsMatch(buffer))
+                        {
+                            return Task.FromResult((UnityExecutorResponseResult?)UnityExecutorResponseResult.Retry);
+                        }
                         if (_machineKeyCapture.IsMatch(buffer))
                         {
                             return Task.FromResult((UnityExecutorResponseResult?)UnityExecutorResponseResult.Retry);
@@ -302,6 +307,11 @@ namespace UnityAutomaticLicensor
                         IsActivated = false,
                         PostedLicenseAttemptXml = _machineKeyCapture.Match(response.Output).Groups[1].Value,
                     };
+                }
+                else if (response.Result == UnityExecutorResponseResult.Retry && _noPermissionsCheck.IsMatch(response.Output))
+                {
+                    Console.WriteLine("Unity couldn't login to authentication servers to generate machine keys, retrying in 30 seconds...");
+                    await Task.Delay(30000);
                 }
                 else if (response.Result == UnityExecutorResponseResult.Success)
                 {
