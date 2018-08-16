@@ -4,7 +4,7 @@ Unity doesn't support automatically licensing installations with Personal licens
 
 This causes a problem for Windows build agents that are automated with Packer, or are otherwise dynamically spun up on public cloud infrastructure.
 
-This tool allows you to license Unity with a Personal license from the command line. It requires you to have Unity 5.4.1f1 installed, but once you've licensed that version of Unity, any newer version of Unity should detect the license file for 5.x and automatically upgrade it to the newer license file version if needed.
+This tool allows you to license Unity with a Personal license from the command line.
 
 ## Usage
 
