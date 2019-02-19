@@ -22,8 +22,15 @@ namespace UnityAutomaticLicensor
         [Option("--unity-path <path-to-Unity.exe>", Description = "Path to Unity executable")]
         public string UnityPath { get; set; }
 
-        [Option("--unity-version <version>", Description = "'v5.x' for 5.x series, 'lic' for 2017.0 and later")]
-        public string UnityVersion { get; set; } = "v5.x";
+        [Option("--unity-license-path <path-to-directory-with-Unity.ulf>", Description =
+            "Path to directory containing Unity license file")]
+        public string UnityLicensePath { get; set; } = "C:/ProgramData/Unity";
+
+        [Option("--unity-version <version>", Description = "Unity version number (e.g. '2018.3.4f1')")]
+        public string UnityVersion { get; set; } = "5.4.1f1";
+
+        [Option("--unity-changeset <changeset>", Description = "Unity version changeset")]
+        public string UnityChangeset { get; set; } = "649f48bbbf0f";
 
         private async Task OnExecute()
         {
@@ -33,6 +40,8 @@ namespace UnityAutomaticLicensor
                 Password = this.Password,
                 UnityExecutablePath = this.UnityPath,
                 UnityVersion = this.UnityVersion,
+                UnityChangeset = this.UnityChangeset,
+                UnityLicensePath =  this.UnityLicensePath
             });
             await licensor.Run();
         }
