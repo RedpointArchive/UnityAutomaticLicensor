@@ -29,7 +29,7 @@ namespace UnityAutomaticLicensor
             while (true)
             {
                 var licenseFileName = _request.UnityVersion[1] == '.' ? _request.UnityVersion : "lic";
-                var licensePath = $@"{_request.UnityLicensePath}\Unity_{licenseFileName}.ulf";
+                var licensePath = $@"{_request.UnityLicensePath}/Unity_{licenseFileName}.ulf";
 
                 var licenseKeyCheck = await RunUnityAndCaptureMachineKeys();
                 if (licenseKeyCheck.IsActivated)
