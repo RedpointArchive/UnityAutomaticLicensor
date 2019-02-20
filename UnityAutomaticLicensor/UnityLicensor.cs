@@ -345,6 +345,7 @@ namespace UnityAutomaticLicensor
                 }
                 else if (response.Result == UnityExecutorResponseResult.Error)
                 {
+                    Console.WriteLine("Error encountered!");
                     throw new InvalidOperationException(response.Output);
                 }
             }
