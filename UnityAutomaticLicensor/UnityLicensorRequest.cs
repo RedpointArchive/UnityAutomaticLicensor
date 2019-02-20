@@ -13,5 +13,7 @@
         public string UnityLicensePath { get; set; }
 
         public string UnityExecutablePath { get; set; }
+
+        public bool CheckSuccess { get; set; }
     }
 }

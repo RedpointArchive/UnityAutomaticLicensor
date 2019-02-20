@@ -32,6 +32,9 @@ namespace UnityAutomaticLicensor
         [Option("--unity-changeset <changeset>", Description = "Unity version changeset")]
         public string UnityChangeset { get; set; } = "649f48bbbf0f";
 
+        [Option("--nocheck", Description = "Indicates that unity should not be started again to verify the obtained license.")]
+        public bool CheckSuccess { get; set; } = true;
+
         private async Task OnExecute()
         {
             var licensor = new UnityLicensor(new UnityLicensorRequest
@@ -41,7 +44,8 @@ namespace UnityAutomaticLicensor
                 UnityExecutablePath = this.UnityPath,
                 UnityVersion = this.UnityVersion,
                 UnityChangeset = this.UnityChangeset,
-                UnityLicensePath =  this.UnityLicensePath
+                UnityLicensePath =  this.UnityLicensePath,
+                CheckSuccess = this.CheckSuccess
             });
             await licensor.Run();
         }

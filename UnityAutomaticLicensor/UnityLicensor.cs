@@ -261,6 +261,12 @@ namespace UnityAutomaticLicensor
                 Console.WriteLine("Successfully obtained a Unity license!");
 
                 Console.WriteLine("Finalising license by running Unity...");
+                if(!_request.CheckSuccess)
+                {
+                    Console.WriteLine("Successfully finalised Unity license!");
+                    return;
+                }
+
                 var finaliseResponse = await RunUnityToFinaliseLicense();
                 if (finaliseResponse.IsActivated)
                 {
@@ -373,7 +379,7 @@ namespace UnityAutomaticLicensor
                         "-force-free"
                     }
                 });
-                
+
                 if (response.Result == UnityExecutorResponseResult.Success)
                 {
                     return new UnityLicenseStatusCheck
