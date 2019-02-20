@@ -296,6 +296,7 @@ namespace UnityAutomaticLicensor
                     {
                         "-quit",
                         "-batchmode",
+                        "-nographics",
                         "-username",
                         _request.Username,
                         "-password",
@@ -363,6 +364,7 @@ namespace UnityAutomaticLicensor
                     {
                         "-quit",
                         "-batchmode",
+                        "-nographics",
                         "-username",
                         _request.Username,
                         "-password",
