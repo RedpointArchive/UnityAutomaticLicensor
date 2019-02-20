@@ -29,8 +29,8 @@ namespace UnityAutomaticLicensor
             }
             processStartInfo.ArgumentList.Add("-logFile");
             processStartInfo.ArgumentList.Add(logPath);
-            processStartInfo.ArgumentList.Add("-createProject");
-            processStartInfo.ArgumentList.Add(temporaryDirectory);
+            //processStartInfo.ArgumentList.Add("-createProject");
+            //processStartInfo.ArgumentList.Add(temporaryDirectory);
             var process = Process.Start(processStartInfo);
 
             Console.WriteLine("Unity process has been launched...");
@@ -119,7 +119,8 @@ namespace UnityAutomaticLicensor
                                 Result = UnityExecutorResponseResult.Retry
                             };
                         }
-                        if (newContent.Contains("Canceling DisplayDialog: Updating license failed Failed to update license within 60 seconds"))
+                        if (newContent.Contains("Canceling DisplayDialog: Updating license failed Failed to update license within 60 seconds")
+                            || newContent.Contains("Cancelling DisplayDialog: Failed to activate/update license. Timeout occured while trying to update license"))
                         {
                             Console.WriteLine("Licensing timeout - Unity has stalled!");
                             await KillProcess(process.Id);
@@ -201,18 +202,27 @@ namespace UnityAutomaticLicensor
 
         private async Task KillProcess(int processId)
         {
-            while (!(Process.GetProcessById(processId)?.HasExited ?? true))
+            try
             {
-                try
+                while (!(Process.GetProcessById(processId)?.HasExited ?? true))
                 {
-                    Console.WriteLine("Sending kill signal to Unity and waiting for it to exit...");
-                    Process.GetProcessById(processId).Kill();
+                    try
+                    {
+                        Console.WriteLine("Sending kill signal to Unity and waiting for it to exit...");
+                        Process.GetProcessById(processId).Kill();
+                    }
+                    catch
+                    {
+                    }
+
+                    await Task.Delay(1000);
                 }
-                catch
-                {
-                }
-                
-                await Task.Delay(1000);
+            }
+            catch (ArgumentException)
+            {
+                // on linux systems the process will be killed immediatly and removed from record.
+                // in this case simply return, as an argument exception indicates the process was properly killed.
+                return;
             }
         }
     }

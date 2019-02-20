@@ -6,8 +6,14 @@
 
         public string Password { get; set; }
 
+        public string UnityVersion { get; set; }
+
+        public string UnityChangeset { get; set; }
+
+        public string UnityLicensePath { get; set; }
+
         public string UnityExecutablePath { get; set; }
 
-        public string UnityVersion { get; set; }
+        public bool CheckSuccess { get; set; }
     }
 }

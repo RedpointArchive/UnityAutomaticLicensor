@@ -28,7 +28,8 @@ namespace UnityAutomaticLicensor
         {
             while (true)
             {
-                var licensePath = $@"C:\ProgramData\Unity\Unity_{_request.UnityVersion}.ulf";
+                var licenseFileName = _request.UnityVersion[1] == '.' ? _request.UnityVersion : "lic";
+                var licensePath = $@"{_request.UnityLicensePath}/Unity_{licenseFileName}.ulf";
 
                 var licenseKeyCheck = await RunUnityAndCaptureMachineKeys();
                 if (licenseKeyCheck.IsActivated)
@@ -40,8 +41,8 @@ namespace UnityAutomaticLicensor
                 Console.WriteLine("Logging into Unity Cloud...");
                 var coreClient = new RestClient("https://core.cloud.unity3d.com");
                 var loginRequest = new RestRequest("api/login", Method.POST);
-                loginRequest.AddCookie("unity_version", "5.4.1f1");
-                loginRequest.AddCookie("unity_version_full", "5.4.1f1 (649f48bbbf0f)");
+                loginRequest.AddCookie("unity_version", $@"{_request.UnityVersion}");
+                loginRequest.AddCookie("unity_version_full", $@"{_request.UnityVersion} ({_request.UnityChangeset})");
                 loginRequest.AddJsonBody(new
                 {
                     grant_type = "password",
@@ -56,8 +57,8 @@ namespace UnityAutomaticLicensor
 
                 Console.WriteLine("Discovering user info for licensing...");
                 var meRequest = new RestRequest("api/users/me", Method.GET);
-                meRequest.AddCookie("unity_version", "5.4.1f1");
-                meRequest.AddCookie("unity_version_full", "5.4.1f1 (649f48bbbf0f)");
+                loginRequest.AddCookie("unity_version", $@"{_request.UnityVersion}");
+                loginRequest.AddCookie("unity_version_full", $@"{_request.UnityVersion} ({_request.UnityChangeset})");
                 meRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
                 response = await coreClient.ExecuteTaskAsync(meRequest);
                 var userResponse = JsonConvert.DeserializeObject<UnityCloudUserResponse>(response.Content);
@@ -86,16 +87,37 @@ namespace UnityAutomaticLicensor
                     var licenseRequest = new RestRequest("api/transactions/{txId}", Method.PUT);
                     licenseRequest.AddUrlSegment("txId", txId);
                     licenseRequest.AddHeader("Authorization", "Bearer " + loginResponse.AccessToken);
-                    licenseRequest.AddJsonBody(new
+                    // newer versions can just skip the survey
+                    if (licenseFileName == "lic")
                     {
-                        transaction = new
+                        licenseRequest.AddJsonBody(new
                         {
-                            serial = new
+                            transaction = new
                             {
-                                type = "personal"
+                                serial = new
+                                {
+                                    type = "personal"
+                                },
+                                survey_answer = new
+                                {
+                                    skipped = true
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+                    else
+                    {
+                        licenseRequest.AddJsonBody(new
+                        {
+                            transaction = new
+                            {
+                                serial = new
+                                {
+                                    type = "personal"
+                                }
+                            }
+                        });
+                    }
                     response = await licenseClient.ExecuteTaskAsync(licenseRequest);
                     licenseResponse = JsonConvert.DeserializeObject<UnityLicenseTransactionResponse>(response.Content);
 
@@ -239,6 +261,12 @@ namespace UnityAutomaticLicensor
                 Console.WriteLine("Successfully obtained a Unity license!");
 
                 Console.WriteLine("Finalising license by running Unity...");
+                if(!_request.CheckSuccess)
+                {
+                    Console.WriteLine("Successfully finalised Unity license!");
+                    return;
+                }
+
                 var finaliseResponse = await RunUnityToFinaliseLicense();
                 if (finaliseResponse.IsActivated)
                 {
@@ -274,6 +302,7 @@ namespace UnityAutomaticLicensor
                     {
                         "-quit",
                         "-batchmode",
+                        "-nographics",
                         "-username",
                         _request.Username,
                         "-password",
@@ -322,6 +351,7 @@ namespace UnityAutomaticLicensor
                 }
                 else if (response.Result == UnityExecutorResponseResult.Error)
                 {
+                    Console.WriteLine("Error encountered!");
                     throw new InvalidOperationException(response.Output);
                 }
             }
@@ -341,6 +371,7 @@ namespace UnityAutomaticLicensor
                     {
                         "-quit",
                         "-batchmode",
+                        "-nographics",
                         "-username",
                         _request.Username,
                         "-password",
@@ -348,7 +379,7 @@ namespace UnityAutomaticLicensor
                         "-force-free"
                     }
                 });
-                
+
                 if (response.Result == UnityExecutorResponseResult.Success)
                 {
                     return new UnityLicenseStatusCheck
